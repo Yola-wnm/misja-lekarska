@@ -98,7 +98,7 @@
 <div id="gameContainer">
     <div class="info-panel">
         <div>Liczba punktów: <span id="score">0</span></div>
-        <div>Pozostało leków: <span id="meds">0</span></div>
+        <div>Pozostało leków: <span id="meds">1</span></div>
     </div>
     <div class="game-board" id="board"></div>
     <div class="msg" id="message"></div>
@@ -136,7 +136,7 @@ function startGame() {
     }
     exit = { x: size - 1, y: size - 1 };
     score = 0;
-    medsLeft = NUM_MEDS;
+    medsLeft = 1; // Początek gry: tylko 1 lek
     gameOver = false;
     draw();
     showMsg('Zbierz leki 💊 i uratuj pacjentów! 🏥');
