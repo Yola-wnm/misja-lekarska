@@ -95,7 +95,7 @@
     </style>
 </head>
 <body>
-<div id="gameContainer">
+<div id="gameContainer" tabindex="0">
     <div class="info-panel">
         <div>Liczba punktów: <span id="score">0</span></div>
         <div>Pozostało leków: <span id="meds">1</span></div>
@@ -139,7 +139,7 @@ function startGame() {
     medsLeft = 1; // Początek gry: tylko 1 lek
     gameOver = false;
     draw();
-    showMsg('Masz tylko 1 lek na początek. Zbieraj kolejne 💊 i lecz pacjentów! 🏥');
+    showMsg('Kliknij w planszę, aby aktywować sterowanie klawiaturą.');
 }
 
 function randPos() {
@@ -196,8 +196,9 @@ function showMsg(msg) {
     document.getElementById('message').textContent = msg;
 }
 
-// --- KLUCZOWA ZMIANA TUTAJ ---
-window.onkeydown = function(e) {
+// Sterowanie tylko po kliknięciu w planszę
+const container = document.getElementById('gameContainer');
+container.addEventListener('keydown', function(e) {
     if (gameOver) return;
     let dx = 0, dy = 0;
     if (e.key === 'ArrowUp' || e.key === 'w') { dy = -1; e.preventDefault(); }
@@ -206,8 +207,12 @@ window.onkeydown = function(e) {
     else if (e.key === 'ArrowRight' || e.key === 'd') { dx = 1; e.preventDefault(); }
     else return;
     moveDoctor(dx, dy);
-};
-// --- KONIEC KLUCZOWEJ ZMIANY ---
+});
+
+// Po kliknięciu w planszę aktywuj sterowanie
+container.addEventListener('click', function() {
+    container.focus();
+});
 
 function moveDoctor(dx, dy) {
     let nx = doctor.x + dx;
