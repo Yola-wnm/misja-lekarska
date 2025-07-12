@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Szpital - Misja Lekarska</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #gameContainer {
+            width: 700px;
+            min-height: 400px;
+            background: #fff;
+            border-radius: 2rem;
+            box-shadow: 0 8px 40px 0 rgba(60,30,120,0.15);
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .info-panel {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(6, 48px);
+            grid-template-rows: repeat(6, 48px);
+            gap: 6px;
+            background: #e9e9f7;
+            padding: 12px;
+            border-radius: 1rem;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 48px;
+            height: 48px;
+            background: #fff;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px 0 rgba(120,120,180,0.07);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+        .doctor {
+            background: #60a5fa;
+            color: #fff;
+        }
+        .patient {
+            background: #facc15;
+            color: #b45309;
+        }
+        .med {
+            background: #34d399;
+            color: #065f46;
+        }
+        .exit {
+            background: #d946ef;
+            color: #fff;
+        }
+        .btn {
+            background: #764ba2;
+            color: #fff;
+            font-weight: 600;
+            padding: 10px 24px;
+            border: none;
+            border-radius: 1rem;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #5b348a;
+        }
+        .msg {
+            font-size: 1.25rem;
+            margin-top: 12px;
+            color: #333;
+            min-height: 32px;
+        }
+    </style>
+</head>
+<body>
+<div id="gameContainer">
+    <div class="info-panel">
+        <div>Liczba punktów: <span id="score">0</span></div>
+        <div>Pozostało leków: <span id="meds">0</span></div>
+    </div>
+    <div class="game-board" id="board"></div>
+    <div class="msg" id="message"></div>
+    <button class="btn" onclick="resetGame()">Nowa gra</button>
+</div>
+<script>
+// Ustawienia planszy
+const size = 6;
+const NUM_PATIENTS = 5;  // Więcej pacjentów
+const NUM_MEDS = 4;      // Więcej leków
+let board, doctor, patients, meds, exit, score, medsLeft, gameOver;
+
+function startGame() {
+    board = [];
+    doctor = { x: 0, y: 0 };
+    patients = [];
+    meds = [];
+    let used = [{ x: 0, y: 0 }, { x: size - 1, y: size - 1 }]; // Zajęte miejsca (lekarz i wyjście)
+
+    // Rozmieszczanie pacjentów (nie mogą się powtarzać)
+    while (patients.length < NUM_PATIENTS) {
+        let pos = randPos();
+        if (!used.some(p => p.x === pos.x && p.y === pos.y)) {
+            patients.push(pos);
+            used.push(pos);
+        }
+    }
+    // Rozmieszczanie leków (nie mogą się powtarzać)
+    while (meds.length < NUM_MEDS) {
+        let pos = randPos();
+        if (!used.some(p => p.x === pos.x && p.y === pos.y)) {
+            meds.push(pos);
+            used.push(pos);
+        }
+    }
+    exit = { x: size - 1, y: size - 1 };
+    score = 0;
+    medsLeft = NUM_MEDS;
+    gameOver = false;
+    draw();
+    showMsg('Zbierz leki 💊 i uratuj pacjentów! 🏥');
+}
+
+function randPos() {
+    // losowa pozycja z wykluczeniem 0,0 i prawy dolny róg
+    let pos;
+    do {
+        pos = {
+            x: Math.floor(Math.random() * size),
+            y: Math.floor(Math.random() * size)
+        };
+    } while ((pos.x === 0 && pos.y === 0) || (pos.x === size - 1 && pos.y === size - 1));
+    return pos;
+}
+
+function draw() {
+    let html = '';
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            let cls = 'cell';
+            let icon = '';
+            // Lekarz
+            if (doctor.x === x && doctor.y === y) {
+                cls += ' doctor';
+                icon = '🧑‍⚕️';
+            }
+            // Pacjent
+            for (let p of patients) {
+                if (p.x === x && p.y === y) {
+                    cls += ' patient';
+                    icon = '🤒';
+                }
+            }
+            // Lek
+            for (let m of meds) {
+                if (m.x === x && m.y === y) {
+                    cls += ' med';
+                    icon = '💊';
+                }
+            }
+            // Wyjście
+            if (exit.x === x && exit.y === y) {
+                cls += ' exit';
+                icon = '🚪';
+            }
+            html += `<div class="${cls}">${icon}</div>`;
+        }
+    }
+    document.getElementById('board').innerHTML = html;
+    document.getElementById('score').textContent = score;
+    document.getElementById('meds').textContent = medsLeft;
+}
+
+function showMsg(msg) {
+    document.getElementById('message').textContent = msg;
+}
+
+window.onkeydown = function(e) {
+    if (gameOver) return;
+    let dx = 0, dy = 0;
+    if (e.key === 'ArrowUp' || e.key === 'w') dy = -1;
+    else if (e.key === 'ArrowDown' || e.key === 's') dy = 1;
+    else if (e.key === 'ArrowLeft' || e.key === 'a') dx = -1;
+    else if (e.key === 'ArrowRight' || e.key === 'd') dx = 1;
+    else return;
+    moveDoctor(dx, dy);
+};
+
+function moveDoctor(dx, dy) {
+    let nx = doctor.x + dx;
+    let ny = doctor.y + dy;
+    if (nx < 0 || nx >= size || ny < 0 || ny >= size) return;
+    doctor.x = nx;
+    doctor.y = ny;
+
+    // Zbieranie leków
+    for (let i = meds.length - 1; i >= 0; i--) {
+        if (doctor.x === meds[i].x && doctor.y === meds[i].y) {
+            meds.splice(i, 1);
+            medsLeft++;
+            showMsg('Masz dodatkowy lek! 💊');
+        }
+    }
+    // Leczenie pacjentów
+    for (let i = patients.length - 1; i >= 0; i--) {
+        if (doctor.x === patients[i].x && doctor.y === patients[i].y) {
+            if (medsLeft > 0) {
+                patients.splice(i, 1);
+                medsLeft--;
+                score++;
+                showMsg('Pacjent wyleczony! 👨‍⚕️🤒');
+            } else {
+                showMsg('Brak leku! Najpierw zbierz lek.');
+            }
+        }
+    }
+    // Wyjście
+    if (doctor.x === exit.x && doctor.y === exit.y) {
+        if (patients.length === 0) {
+            showMsg('Wygrałeś! Uratowałeś wszystkich pacjentów! 🏆');
+            gameOver = true;
+        } else {
+            showMsg('Najpierw uratuj wszystkich pacjentów!');
+        }
+    }
+    draw();
+}
+
+function resetGame() {
+    startGame();
+}
+
+startGame();
+</script>
+</body>
+</html>
